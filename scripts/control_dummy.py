@@ -13,7 +13,7 @@ def callback(inputMsg):
 def pause_callback(msg):
     global paused
     paused = msg.data
-    rospy.loginfo("Gazebo Paused Status: " + str(paused))	
+    #rospy.loginfo("Gazebo Paused Status: " + str(paused))	
 
   
 #this code will simulate an update rate for gazebo time synchronization.

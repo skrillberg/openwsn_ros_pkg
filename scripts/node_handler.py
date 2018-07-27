@@ -19,6 +19,9 @@ openTime = 0
 mesh_pause = False
 gazebo_pause = False
 pauseOpenwsn = False
+err_sum = 0
+last_time = 0
+
 # Restrict to a particular path.
 class RequestHandler(SimpleXMLRPCRequestHandler):
     rpc_paths = ('/RPC2',)
@@ -60,7 +63,7 @@ def gazebo_time_callback(time_msg):
 	global gazebo_time
 	global gazebo_pause
 	#global openTime
-	rospy.loginfo("gazebo time: " + str(time_msg.data))	
+	#rospy.loginfo("gazebo time: " + str(time_msg.data))	
 	gazebo_time = time_msg.data
 	#rospy.loginfo( "Sync Timestamps Always (OpenWSN,Gazebo): " + str(openTime)+", " + str(gazebo_time.data))
 	#if (gazebo_time > openTime) and (gazebo_pause == False):
@@ -123,24 +126,29 @@ class MyFuncs:
 		global gazebo_time
 		global gazebo_pause
 		global pauseOpenwsn
+		global lasttime
+		global err_sum
+		last_time= (gazebo_time+openTime)/2
 		openTime = timestamp #time from openwsn timeline
 		print "gazebo_pause: ", gazebo_pause
 		if ((gazebo_time < timestamp)and(gazebo_pause==True) ):
 			gazebo_pause = False
 			print "unpausing gazebo"
-			rospy.loginfo("Unpause Gazebo")		
+			#rospy.loginfo("Unpause Gazebo")		
 			pause_pub.publish(False)
 			pauseOpenwsn = True #pause opewsn because gazebo is running
 		elif ((gazebo_time > timestamp) and (gazebo_pause == False)):
 
 			gazebo_pause = True
-			rospy.loginfo("Pause Gazebo")		
+			#rospy.loginfo("Pause Gazebo")		
 			pause_pub.publish(True)			
 			pauseOpenwsn = False #run openwsn because gazebo is paused
 		elif (gazebo_time < timestamp):
 			pauseOpenwsn = True	#pause openwsn if simulator starts up in this case
 			gazebo_pause == False
-    		rospy.loginfo( "Time Synchronization (OpenWSN Time,Gazebo Time,Synchronization Error): " + str(openTime)+", " + str(gazebo_time) +', ' +str(abs(openTime-gazebo_time)))
+		if (openTime+gazebo_time)/2 > 0:
+			err_sum = err_sum + abs(openTime-gazebo_time)*((openTime+gazebo_time)/2-last_time)
+    			rospy.loginfo_throttle(1, "Time Synchronization (OpenWSN Time,Gazebo Time,Synchronization Error,Avg Error): " + str(openTime)+", " + str(gazebo_time) +', ' +str(abs(openTime-gazebo_time)) +', ' +str(err_sum/((openTime+gazebo_time)/2)))
     		if simulating:
 			print( "Sync Timestamp Simulating: " , timestamp , gazebo_time)
 		#if simulating and (timestamp>rosTime):
