@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
 from beginner_tutorials.srv import *
-from std_msgs.msg import Bool, Float32
+from std_msgs.msg import Bool, Float32, Time
 import rospy
 from sensor_msgs.msg import Imu
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 from openwsn_ros.msg import Controls
+from rosgraph_msgs.msg import Clock
 
 #global variables
 accelx = 1
@@ -40,7 +41,16 @@ def adder_function(x,y):
     return x + y
 server.register_function(adder_function, 'add')
 
+def hector_imu(imuMsg):
+	rospy.loginfo(rospy.get_caller_id() + "IMU message received: %s, %s, %s ", imuMsg.linear_acceleration.x,imuMsg.linear_acceleration.y,imuMsg.linear_acceleration.z)
+	global accelx
+	global accely
+	global accelz
 
+	accelx=imuMsg.linear_acceleration.x
+	accely=imuMsg.linear_acceleration.y
+	accelz=imuMsg.linear_acceleration.z
+	#print "in callback"
 
 def imu_callback(imuMsg):
 	rospy.loginfo(rospy.get_caller_id() + "IMU message received: %s, %s, %s ", imuMsg.linear_acceleration.x,imuMsg.linear_acceleration.y,imuMsg.linear_acceleration.z)
@@ -59,12 +69,13 @@ def sim_status_callback(msg):
 	simulating = False
 
 
-def gazebo_time_callback(time_msg):
+def gazebo_time_callback(clock_msg):
 	global gazebo_time
 	global gazebo_pause
 	#global openTime
-	#rospy.loginfo("gazebo time: " + str(time_msg.data))	
-	gazebo_time = time_msg.data
+	
+	
+	gazebo_time = clock_msg.clock.to_sec()
 	#rospy.loginfo( "Sync Timestamps Always (OpenWSN,Gazebo): " + str(openTime)+", " + str(gazebo_time.data))
 	#if (gazebo_time > openTime) and (gazebo_pause == False):
 	#	gazebo_pause == True
@@ -177,9 +188,9 @@ server.register_instance(MyFuncs())
 rospy.init_node('mote_handler', anonymous=True)
 rate = rospy.Rate(.5)
 print "node initialized"
-rospy.Subscriber("imu_datastream", Imu, imu_callback)
+rospy.Subscriber("raw_imu", Imu, imu_callback)
 rospy.Subscriber("sim_status", Bool, sim_status_callback)
-rospy.Subscriber("gazebo_time",Float32,gazebo_time_callback)
+rospy.Subscriber("clock",Clock,gazebo_time_callback)
 pause_pub = rospy.Publisher("gazebo_pause",Bool,queue_size = 1)
 # Run the server's main loop
 server.serve_forever()
