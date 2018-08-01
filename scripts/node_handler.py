@@ -131,24 +131,32 @@ class MyFuncs:
 		last_time= (gazebo_time+openTime)/2
 		openTime = timestamp #time from openwsn timeline
 		print "gazebo_pause: ", gazebo_pause
-		if ((gazebo_time < timestamp)and(gazebo_pause==True) ):
+
+		if ((gazebo_time < timestamp)and(gazebo_pause==True)and(pauseOpenwsn==False) ):
 			gazebo_pause = False
 			print "unpausing gazebo"
 			#rospy.loginfo("Unpause Gazebo")		
 			pause_pub.publish(False)
 			pauseOpenwsn = True #pause opewsn because gazebo is running
-		elif ((gazebo_time > timestamp) and (gazebo_pause == False)):
+
+		elif ((gazebo_time > timestamp) and (gazebo_pause == False)and(pauseOpenwsn==True)):
 
 			gazebo_pause = True
 			#rospy.loginfo("Pause Gazebo")		
 			pause_pub.publish(True)			
 			pauseOpenwsn = False #run openwsn because gazebo is paused
-		elif (gazebo_time < timestamp):
+
+		elif ((gazebo_time < timestamp)and (gazebo_pause == False)and(pauseOpenwsn==False)):
 			pauseOpenwsn = True	#pause openwsn if simulator starts up in this case
 			gazebo_pause == False
+
+		elif ((gazebo_time > timestamp)and (gazebo_pause == False)and(pauseOpenwsn==False)):
+			pauseOpenwsn = False	#pause gazebo if simulator starts up in this case
+			gazebo_pause == True
+
 		if (openTime+gazebo_time)/2 > 0:
 			err_sum = err_sum + abs(openTime-gazebo_time)*((openTime+gazebo_time)/2-last_time)
-    			rospy.loginfo_throttle(1, "Time Synchronization (OpenWSN Time,Gazebo Time,Synchronization Error,Avg Error): " + str(openTime)+", " + str(gazebo_time) +', ' +str(abs(openTime-gazebo_time)) +', ' +str(err_sum/((openTime+gazebo_time)/2)))
+    			rospy.loginfo_throttle(0.25, "Time Synchronization (OpenWSN Time,Gazebo Time,Synchronization Error,Avg Error): " + str(openTime)+", " + str(gazebo_time) +', ' +str(abs(openTime-gazebo_time)) +', ' +str(err_sum/((openTime+gazebo_time)/2)))
     		if simulating:
 			print( "Sync Timestamp Simulating: " , timestamp , gazebo_time)
 		#if simulating and (timestamp>rosTime):
