@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
 from beginner_tutorials.srv import *
-from std_msgs.msg import Bool, Float32, Time
+from std_msgs.msg import Bool, Float32, Time, Float64
 import rospy
 from sensor_msgs.msg import Imu
 from SimpleXMLRPCServer import SimpleXMLRPCServer
 from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 from openwsn_ros.msg import Controls
 from rosgraph_msgs.msg import Clock
+from geometry_msgs.msg import Twist
 
 #global variables
 accelx = 1
@@ -102,7 +103,7 @@ class MyFuncs:
 		global accelz
 		global rosTime
 		global simulating
-
+		rospy.loginfo("RPC control input received from openwsn")
 
 		rosTime = timestamp
 		simulating = True
@@ -113,23 +114,34 @@ class MyFuncs:
 		print "Timestamp: ",timestamp
 		rospy.loginfo(rospy.get_caller_id() + "Sending %s, %s, %s to %s",accelx,accely,accelz,mote_name)
 		#server publishes controls that are received from the emulated mote
-		pub = rospy.Publisher('quad_input',Controls,queue_size=10)
-		inputMsg = Controls()
-		inputMsg.prop1 = x
-		inputMsg.prop2 = timestamp
+		#pub = rospy.Publisher('quad_input',Controls,queue_size=10)
+		pub = rospy.Publisher('cmd_vel',Twist,queue_size=10)
+		inputMsg = Twist()
+		inputMsg.linear.x = x
+		inputMsg.linear.y = y
+		inputMsg.linear.z = z
+
 		timestamp = timestamp+1
 		pub.publish(inputMsg)
-
-		return [int(accelx),int(accely),int(accelz)] , timestamp
+		rospy.loginfo("quad control input published to dummy node")
+		rospy.loginfo(accelx)
+		rospy.loginfo(str(type(accelx)))
+		rospy.loginfo(str(int(accelx)))
+		rospy.loginfo(str(type(int(accelx))))
+		#accelx = 0
+		#accely= 0
+		#accelz = 0
+		return [int(abs(accelx)),int(abs(accely)),int(abs(accelz))] , timestamp
 
 
     def control(self,mote_name,control_input):
+		
 		pub = rospy.Publisher('quad_input',Controls,queue_size=10)
 		inputMsg = Controls()
 		inputMsg.prop1 = 0.6
 
 		pub.publish(inputMsg)
-
+		
     def timeSync(self,timestamp):
 		global pause_pub
 		global openTime
