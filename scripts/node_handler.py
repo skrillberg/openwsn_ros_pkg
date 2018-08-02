@@ -9,6 +9,7 @@ from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 from openwsn_ros.msg import Controls
 from rosgraph_msgs.msg import Clock
 from geometry_msgs.msg import Twist
+import struct
 
 #global variables
 accelx = 1
@@ -41,6 +42,13 @@ server.register_function(pow)
 def adder_function(x,y):
     return x + y
 server.register_function(adder_function, 'add')
+
+def signify(x):
+	if x > 127:
+		signed = x-256
+	else:
+		signed = x
+	return signed
 
 def hector_imu(imuMsg):
 	rospy.loginfo(rospy.get_caller_id() + "IMU message received: %s, %s, %s ", imuMsg.linear_acceleration.x,imuMsg.linear_acceleration.y,imuMsg.linear_acceleration.z)
@@ -117,21 +125,23 @@ class MyFuncs:
 		#pub = rospy.Publisher('quad_input',Controls,queue_size=10)
 		pub = rospy.Publisher('cmd_vel',Twist,queue_size=10)
 		inputMsg = Twist()
-		inputMsg.linear.x = x
-		inputMsg.linear.y = y
-		inputMsg.linear.z = z
+		inputMsg.linear.x = signify(x)
+		inputMsg.linear.y = signify(y)
+		inputMsg.linear.z = signify(z)
 
 		timestamp = timestamp+1
 		pub.publish(inputMsg)
-		rospy.loginfo("quad control input published to dummy node")
-		rospy.loginfo(accelx)
-		rospy.loginfo(str(type(accelx)))
-		rospy.loginfo(str(int(accelx)))
-		rospy.loginfo(str(type(int(accelx))))
+		print x, y, z
+		rospy.loginfo("quad control input published to dummy node "+str(x)+str(y)+str(inputMsg.linear.z))
+
 		#accelx = 0
 		#accely= 0
 		#accelz = 0
-		return [int(abs(accelx)),int(abs(accely)),int(abs(accelz))] , timestamp
+		longx = int(accelx*32767/16) #converts acceleration from float to hardware units int 
+		
+		longy = int(accely*32767/16)
+		longz = int(accelz*32767/16)
+		return [accelx,accely,accelz] , timestamp
 
 
     def control(self,mote_name,control_input):
