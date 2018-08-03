@@ -125,9 +125,14 @@ class MyFuncs:
 		#pub = rospy.Publisher('quad_input',Controls,queue_size=10)
 		pub = rospy.Publisher('cmd_vel',Twist,queue_size=10)
 		inputMsg = Twist()
-		inputMsg.linear.x = signify(x)
-		inputMsg.linear.y = signify(y)
-		inputMsg.linear.z = signify(z)
+
+		inputMsg.linear.x = x
+		inputMsg.linear.y = y
+		inputMsg.linear.z = z	
+				
+		#inputMsg.linear.x = signify(x)
+		#inputMsg.linear.y = signify(y)
+		#inputMsg.linear.z = signify(z)
 
 		timestamp = timestamp+1
 		pub.publish(inputMsg)
