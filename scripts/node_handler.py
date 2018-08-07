@@ -12,6 +12,7 @@ from geometry_msgs.msg import Twist
 import struct
 
 #global variables
+state_vars ={} #'uav name':[accelx, accely, accelz, gyrox,gyroy,gyroz]
 accelx = 1
 accely = 2
 accelz = 3
@@ -66,10 +67,15 @@ def imu_callback(imuMsg):
 	global accelx
 	global accely
 	global accelz
+	global state_vars
+	uav_id = "uav"
+	state_vars[uav_id][0] = imuMsg.linear_acceleration.x
+	state_vars[uav_id][1] = imuMsg.linear_acceleration.y
+	state_vars[uav_id][2] = imuMsg.linear_acceleration.z
 
-	accelx=imuMsg.linear_acceleration.x
-	accely=imuMsg.linear_acceleration.y
-	accelz=imuMsg.linear_acceleration.z
+	#accelx=imuMsg.linear_acceleration.x
+	#accely=imuMsg.linear_acceleration.y
+	#accelz=imuMsg.linear_acceleration.z
 	#print "in callback"
 
 def sim_status_callback(msg):
@@ -106,47 +112,62 @@ class MyFuncs:
 	return "communicated"
 
     def prt2(self,mote_name,x,y,z,timestamp):
+		#need a list of accelerations that are added to
+		global state_vars
 		global accelx
 		global accely
 		global accelz
 		global rosTime
 		global simulating
-		rospy.loginfo("RPC control input received from openwsn")
+		global robot_dict
+		mote_id = (mote_name.split('@')[1]) #mote_name is in this raw form: fromMoteProbe@emulatedx
 
-		rosTime = timestamp
-		simulating = True
-
-		print ""
-		print "received ",(x),(y) ,z, timestamp,"from",mote_name
-		print "sending ",accelx,accely ,accelz ,timestamp,"to",mote_name
-		print "Timestamp: ",timestamp
-		rospy.loginfo(rospy.get_caller_id() + "Sending %s, %s, %s to %s",accelx,accely,accelz,mote_name)
-		#server publishes controls that are received from the emulated mote
-		#pub = rospy.Publisher('quad_input',Controls,queue_size=10)
-		pub = rospy.Publisher('cmd_vel',Twist,queue_size=10)
-		inputMsg = Twist()
-
-		inputMsg.linear.x = x
-		inputMsg.linear.y = y
-		inputMsg.linear.z = z	
-				
-		#inputMsg.linear.x = signify(x)
-		#inputMsg.linear.y = signify(y)
-		#inputMsg.linear.z = signify(z)
-
-		timestamp = timestamp+1
-		pub.publish(inputMsg)
-		print x, y, z
-		rospy.loginfo("quad control input published to dummy node "+str(x)+str(y)+str(inputMsg.linear.z))
-
-		#accelx = 0
-		#accely= 0
-		#accelz = 0
-		longx = int(accelx*32767/16) #converts acceleration from float to hardware units int 
+		rospy.loginfo(mote_id)
 		
-		longy = int(accely*32767/16)
-		longz = int(accelz*32767/16)
-		return [accelx,accely,accelz] , timestamp
+		target_uav = robot_dict[mote_id]
+		rospy.loginfo("RPC control input received from openwsn")
+		rosTime = timestamp
+		if target_uav == 'uav':
+
+			
+			simulating = True
+
+			print ""
+			print "received ",(x),(y) ,z, timestamp,"from",mote_name
+			print "sending ",accelx,accely ,accelz ,timestamp,"to",mote_name
+			print "Timestamp: ",timestamp
+			rospy.loginfo(rospy.get_caller_id() + "Sending %s, %s, %s to %s",accelx,accely,accelz,mote_name)
+			#server publishes controls that are received from the emulated mote
+			#pub = rospy.Publisher('quad_input',Controls,queue_size=10)
+			pub = rospy.Publisher('cmd_vel',Twist,queue_size=10) #this is where i need to add the call to each uav based on mote name
+			inputMsg = Twist()
+
+			inputMsg.linear.x = x
+			inputMsg.linear.y = y
+			inputMsg.linear.z = z	
+				
+			#inputMsg.linear.x = signify(x)
+			#inputMsg.linear.y = signify(y)
+			#inputMsg.linear.z = signify(z)
+
+			timestamp = timestamp+1
+			pub.publish(inputMsg)
+			print x, y, z
+			rospy.loginfo("quad control input published to dummy node "+str(x)+str(y)+str(inputMsg.linear.z))
+
+			#accelx = 0
+			#accely= 0
+			#accelz = 0
+			#longx = int(accelx*32767/16) #converts acceleration from float to hardware units int 
+		
+			#longy = int(accely*32767/16)
+			#longz = int(accelz*32767/16)
+		else: 
+			state_vars[mote_id]=[0,0,0,0,0,0] #set state vars to all zero
+			
+
+
+		return state_vars[target_uav][0:3] , timestamp 
 
 
     def control(self,mote_name,control_input):
@@ -215,6 +236,8 @@ server.register_instance(MyFuncs())
 rospy.init_node('mote_handler', anonymous=True)
 rate = rospy.Rate(.5)
 print "node initialized"
+robot_dict = {"emulated1":"uav","emulated2":"uav2","emulated3":"uav3"} #initialize dict with three robot mappings
+state_vars = {"uav":[0,0,0,0,0,0],"uav":[0,0,0,0,0,0],"uav2":[0,0,0,0,0,0],"uav3":[0,0,0,0,0,0]} #initalize state dict for imu variables
 rospy.Subscriber("raw_imu", Imu, imu_callback)
 rospy.Subscriber("sim_status", Bool, sim_status_callback)
 rospy.Subscriber("clock",Clock,gazebo_time_callback)
