@@ -2,6 +2,7 @@
 
 from beginner_tutorials.srv import *
 from std_msgs.msg import Bool, Float32, Time, Float64
+from std_srvs.srv import Empty
 import rospy
 from sensor_msgs.msg import Imu
 from SimpleXMLRPCServer import SimpleXMLRPCServer
@@ -63,12 +64,12 @@ def hector_imu(imuMsg):
 	#print "in callback"
 
 def imu_callback(imuMsg):
-	rospy.loginfo(rospy.get_caller_id() + "IMU message received: %s, %s, %s ", imuMsg.linear_acceleration.x,imuMsg.linear_acceleration.y,imuMsg.linear_acceleration.z)
+	#rospy.loginfo(rospy.get_caller_id() + "IMU message received: %s, %s, %s ", imuMsg.linear_acceleration.x,imuMsg.linear_acceleration.y,imuMsg.linear_acceleration.z)
 	global accelx
 	global accely
 	global accelz
 	global state_vars
-	uav_id = "uav"
+	uav_id = "uav1"
 	state_vars[uav_id][0] = imuMsg.linear_acceleration.x
 	state_vars[uav_id][1] = imuMsg.linear_acceleration.y
 	state_vars[uav_id][2] = imuMsg.linear_acceleration.z
@@ -77,6 +78,39 @@ def imu_callback(imuMsg):
 	#accely=imuMsg.linear_acceleration.y
 	#accelz=imuMsg.linear_acceleration.z
 	#print "in callback"
+
+def imu_callback2(imuMsg):
+	#rospy.loginfo(rospy.get_caller_id() + "IMU message received: %s, %s, %s ", imuMsg.linear_acceleration.x,imuMsg.linear_acceleration.y,imuMsg.linear_acceleration.z)
+	global accelx
+	global accely
+	global accelz
+	global state_vars
+	uav_id = "uav2"
+	state_vars[uav_id][0] = imuMsg.linear_acceleration.x
+	state_vars[uav_id][1] = imuMsg.linear_acceleration.y
+	state_vars[uav_id][2] = imuMsg.linear_acceleration.z
+
+	#accelx=imuMsg.linear_acceleration.x
+	#accely=imuMsg.linear_acceleration.y
+	#accelz=imuMsg.linear_acceleration.z
+	#print "in callback"
+
+def imu_callback3(imuMsg):
+	#rospy.loginfo(rospy.get_caller_id() + "IMU message received: %s, %s, %s ", imuMsg.linear_acceleration.x,imuMsg.linear_acceleration.y,imuMsg.linear_acceleration.z)
+	global accelx
+	global accely
+	global accelz
+	global state_vars
+	uav_id = "uav3"
+	state_vars[uav_id][0] = imuMsg.linear_acceleration.x
+	state_vars[uav_id][1] = imuMsg.linear_acceleration.y
+	state_vars[uav_id][2] = imuMsg.linear_acceleration.z
+
+	#accelx=imuMsg.linear_acceleration.x
+	#accely=imuMsg.linear_acceleration.y
+	#accelz=imuMsg.linear_acceleration.z
+	#print "in callback"
+
 
 def sim_status_callback(msg):
 	global simulating
@@ -127,43 +161,42 @@ class MyFuncs:
 		target_uav = robot_dict[mote_id]
 		rospy.loginfo("RPC control input received from openwsn")
 		rosTime = timestamp
-		if target_uav == 'uav':
+	
 
 			
-			simulating = True
+		simulating = True
 
-			print ""
-			print "received ",(x),(y) ,z, timestamp,"from",mote_name
-			print "sending ",accelx,accely ,accelz ,timestamp,"to",mote_name
-			print "Timestamp: ",timestamp
-			rospy.loginfo(rospy.get_caller_id() + "Sending %s, %s, %s to %s",accelx,accely,accelz,mote_name)
-			#server publishes controls that are received from the emulated mote
-			#pub = rospy.Publisher('quad_input',Controls,queue_size=10)
-			pub = rospy.Publisher('cmd_vel',Twist,queue_size=10) #this is where i need to add the call to each uav based on mote name
-			inputMsg = Twist()
+		print ""
+		print "received ",(x),(y) ,z, timestamp,"from",mote_name
+		print "sending ",accelx,accely ,accelz ,timestamp,"to",mote_name
+		print "Timestamp: ",timestamp
+		rospy.loginfo(rospy.get_caller_id() + "Sending %s, %s, %s to %s",accelx,accely,accelz,mote_name)
+		#server publishes controls that are received from the emulated mote
+		#pub = rospy.Publisher('quad_input',Controls,queue_size=10)
+		pub = rospy.Publisher(target_uav+'/cmd_vel',Twist,queue_size=10) #this is where i need to add the call to each uav based on mote name
+		inputMsg = Twist()
 
-			inputMsg.linear.x = x
-			inputMsg.linear.y = y
-			inputMsg.linear.z = z	
-				
-			#inputMsg.linear.x = signify(x)
-			#inputMsg.linear.y = signify(y)
-			#inputMsg.linear.z = signify(z)
+		inputMsg.linear.x = x
+		inputMsg.linear.y = y
+		inputMsg.linear.z = z	
+			
+		#inputMsg.linear.x = signify(x)
+		#inputMsg.linear.y = signify(y)
+		#inputMsg.linear.z = signify(z)
 
-			timestamp = timestamp+1
-			pub.publish(inputMsg)
-			print x, y, z
-			rospy.loginfo("quad control input published to dummy node "+str(x)+str(y)+str(inputMsg.linear.z))
+		timestamp = timestamp+1
+		pub.publish(inputMsg)
+		print x, y, z
+		rospy.loginfo("quad control input published to "+target_uav+": "+str(x)+str(y)+str(inputMsg.linear.z))
 
-			#accelx = 0
-			#accely= 0
-			#accelz = 0
-			#longx = int(accelx*32767/16) #converts acceleration from float to hardware units int 
-		
-			#longy = int(accely*32767/16)
-			#longz = int(accelz*32767/16)
-		else: 
-			state_vars[mote_id]=[0,0,0,0,0,0] #set state vars to all zero
+		#accelx = 0
+		#accely= 0
+		#accelz = 0
+		#longx = int(accelx*32767/16) #converts acceleration from float to hardware units int 
+	
+		#longy = int(accely*32767/16)
+		#longz = int(accelz*32767/16)
+	
 			
 
 
@@ -190,10 +223,13 @@ class MyFuncs:
 		last_time= (gazebo_time+openTime)/2
 		openTime = timestamp #time from openwsn timeline
 		print "gazebo_pause: ", gazebo_pause
+		if gazebo_pause == False:
+			unpause_srv
 
 		if ((gazebo_time < timestamp)and(gazebo_pause==True)and(pauseOpenwsn==False) ):
 			gazebo_pause = False
 			print "unpausing gazebo"
+			unpause_srv()
 			#rospy.loginfo("Unpause Gazebo")		
 			pause_pub.publish(False)
 			pauseOpenwsn = True #pause opewsn because gazebo is running
@@ -201,6 +237,7 @@ class MyFuncs:
 		elif ((gazebo_time > timestamp) and (gazebo_pause == False)and(pauseOpenwsn==True)):
 
 			gazebo_pause = True
+			pause_srv()
 			#rospy.loginfo("Pause Gazebo")		
 			pause_pub.publish(True)			
 			pauseOpenwsn = False #run openwsn because gazebo is paused
@@ -208,11 +245,11 @@ class MyFuncs:
 		elif ((gazebo_time < timestamp)and (gazebo_pause == False)and(pauseOpenwsn==False)):
 			pauseOpenwsn = True	#pause openwsn if simulator starts up in this case
 			gazebo_pause == False
-
+			unpause_srv()
 		elif ((gazebo_time > timestamp)and (gazebo_pause == False)and(pauseOpenwsn==False)):
 			pauseOpenwsn = False	#pause gazebo if simulator starts up in this case
 			gazebo_pause == True
-
+			pause_srv()
 		if (openTime+gazebo_time)/2 > 0:
 			err_sum = err_sum + abs(openTime-gazebo_time)*((openTime+gazebo_time)/2-last_time)
     			rospy.loginfo_throttle(0.25, "Time Synchronization (OpenWSN Time,Gazebo Time,Synchronization Error,Avg Error): " + str(openTime)+", " + str(gazebo_time) +', ' +str(abs(openTime-gazebo_time)) +', ' +str(err_sum/((openTime+gazebo_time)/2)))
@@ -236,11 +273,18 @@ server.register_instance(MyFuncs())
 rospy.init_node('mote_handler', anonymous=True)
 rate = rospy.Rate(.5)
 print "node initialized"
-robot_dict = {"emulated1":"uav","emulated2":"uav2","emulated3":"uav3"} #initialize dict with three robot mappings
-state_vars = {"uav":[0,0,0,0,0,0],"uav":[0,0,0,0,0,0],"uav2":[0,0,0,0,0,0],"uav3":[0,0,0,0,0,0]} #initalize state dict for imu variables
-rospy.Subscriber("raw_imu", Imu, imu_callback)
+robot_dict = {"emulated1":"uav1","emulated2":"uav2","emulated3":"uav3"} #initialize dict with three robot mappings
+state_vars = {"uav1":[0,0,0,0,0,0],"uav2":[0,0,0,0,0,0],"uav3":[0,0,0,0,0,0]} #initalize state dict for imu variables
+
+rospy.Subscriber("uav1/raw_imu", Imu, imu_callback)
+rospy.Subscriber("uav2/raw_imu", Imu, imu_callback2)
+rospy.Subscriber("uav3/raw_imu", Imu, imu_callback3)
+
 rospy.Subscriber("sim_status", Bool, sim_status_callback)
 rospy.Subscriber("clock",Clock,gazebo_time_callback)
 pause_pub = rospy.Publisher("gazebo_pause",Bool,queue_size = 1)
+pause_srv = rospy.ServiceProxy('gazebo/pause_physics',Empty)
+unpause_srv = rospy.ServiceProxy('gazebo/unpause_physics',Empty)
+unpause_srv() #unpause gazebo so it publishes to the clock topic and timekeeper can learn its current time
 # Run the server's main loop
 server.serve_forever()
