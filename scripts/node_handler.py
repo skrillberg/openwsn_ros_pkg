@@ -37,11 +37,12 @@ server.register_introspection_functions()
 #suscriber callbacks#######################################################3
 
 #calback for uav1 imu messages
-def imu_callback(imuMsg):
+def imu_callback(imuMsg,uav_arg):
 	#rospy.loginfo(rospy.get_caller_id() + "IMU message received: %s, %s, %s ", imuMsg.linear_acceleration.x,imuMsg.linear_acceleration.y,imuMsg.linear_acceleration.z)
-
+	#rospy.loginfo("uav_arg: " + uav_arg)
 	global state_vars
 	uav_id = "uav1"
+	uav_id = uav_arg
 	state_vars[uav_id][0] = imuMsg.linear_acceleration.x
 	state_vars[uav_id][1] = imuMsg.linear_acceleration.y
 	state_vars[uav_id][2] = imuMsg.linear_acceleration.z
@@ -193,15 +194,25 @@ rate = rospy.Rate(.5)
 print "node initialized"
 
 #TODO: the following two line should be done programatically and not be hardcoded
+robot_dict={}
+state_vars={}
+#create robot dict
+for i in range(1,4):
+	robot_dict["emulated"+str(i)]="uav"+str(i)
+	rospy.Subscriber("uav"+str(i)+"/raw_imu", Imu, imu_callback,"uav"+str(i))
+	state_vars["uav"+str(i)] = [0,0,0,0,0,0]
+'''
 robot_dict = {"emulated1":"uav1","emulated2":"uav2","emulated3":"uav3"} #initialize dict with three robot mappings
 state_vars = {"uav1":[0,0,0,0,0,0],"uav2":[0,0,0,0,0,0],"uav3":[0,0,0,0,0,0]} #initalize state dict for imu variables
+'''
 
 #suscribe to IMU topics for each robot
 #TODO: this should be done programatically so I can suscribe to n IMU topics
-rospy.Subscriber("uav1/raw_imu", Imu, imu_callback)
-rospy.Subscriber("uav2/raw_imu", Imu, imu_callback2)
-rospy.Subscriber("uav3/raw_imu", Imu, imu_callback3)
-
+'''
+rospy.Subscriber("uav1/raw_imu", Imu, imu_callback,"uav1")
+rospy.Subscriber("uav2/raw_imu", Imu, imu_callback,"uav2")
+rospy.Subscriber("uav3/raw_imu", Imu, imu_callback,"uav3")
+'''
 #Suscribe to clock topic to receive gazebo time. Gazebo needs to be publishing
 #to the clock topic for this to work
 rospy.Subscriber("clock",Clock,gazebo_time_callback)
