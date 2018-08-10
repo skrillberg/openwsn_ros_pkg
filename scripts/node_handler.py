@@ -11,6 +11,7 @@ from openwsn_ros.msg import Controls
 from rosgraph_msgs.msg import Clock
 from geometry_msgs.msg import Twist
 import struct
+import sys
 
 #global variables ################################################
 
@@ -197,7 +198,7 @@ print "node initialized"
 robot_dict={}
 state_vars={}
 #create robot dict
-for i in range(1,4):
+for i in range(1,int(sys.argv[1])+1):
 	robot_dict["emulated"+str(i)]="uav"+str(i)
 	rospy.Subscriber("uav"+str(i)+"/raw_imu", Imu, imu_callback,"uav"+str(i))
 	state_vars["uav"+str(i)] = [0,0,0,0,0,0]
