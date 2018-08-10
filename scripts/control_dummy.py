@@ -19,7 +19,7 @@ def pause_callback(msg):
 #this code will simulate an update rate for gazebo time synchronization.
 rospy.Subscriber("quad_input", Controls, callback)
 pub = rospy.Publisher("sim_status",Bool,queue_size = 1)
-pub_time = rospy.Publisher("gazebo_time",Float32, queue_size=1)
+pub_time = rospy.Publisher("gazebo_time_dummy",Float32, queue_size=1)
 rospy.init_node('control_dummy', anonymous=True)
 rate = rospy.Rate(1)
 time_rate = 100.0
