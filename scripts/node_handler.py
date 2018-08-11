@@ -1,13 +1,9 @@
 #!/usr/bin/env python
 
-<<<<<<< HEAD
 
-from std_msgs.msg import Bool, Float32
-=======
-from beginner_tutorials.srv import *
 from std_msgs.msg import Bool, Float32, Time, Float64
 from std_srvs.srv import Empty
->>>>>>> fd627e0f01938bd7ae700c3833d16e8f1a9803a3
+
 import rospy
 from sensor_msgs.msg import Imu
 from SimpleXMLRPCServer import SimpleXMLRPCServer
@@ -112,7 +108,8 @@ class MyFuncs:
 
 		#server publishes controls that are received from the emulated mote
 
-		pub = rospy.Publisher(target_uav+'/cmd_vel',Twist,queue_size=10) #this is where i need to add the call to each uav based on mote name. constantly reconstructing the publisher isn't a great idea
+		#pub = rospy.Publisher(target_uav+'/cmd_vel',Twist,queue_size=10) #this is where i need to add the call to each uav based on mote name. constantly reconstructing the publisher isn't a great idea	
+		pub = pub_dict[target_uav]
 		inputMsg = Twist() #create twist message for quadcopter controls
 		
 		#put linear accelerations into twist message
@@ -144,7 +141,7 @@ class MyFuncs:
 
 		last_time= (gazebo_time+openTime)/2 #previous time, used to compute average error
 		openTime = timestamp #time from openwsn timeline
-		rospy.loginfo("gazebo_pause: " + str(gazebo_pause))
+		#rospy.loginfo("gazebo_pause: " + str(gazebo_pause))
 		
 		#this was added because at one point gazebo_pause had been set to false without the upause gazebo service being called 
 		if gazebo_pause == False:
@@ -202,11 +199,14 @@ print "node initialized"
 #TODO: the following two line should be done programatically and not be hardcoded
 robot_dict={}
 state_vars={}
+pub_dict ={}
 #create robot dict
 for i in range(1,int(sys.argv[1])+1):
 	robot_dict["emulated"+str(i)]="uav"+str(i)
 	rospy.Subscriber("uav"+str(i)+"/raw_imu", Imu, imu_callback,"uav"+str(i))
 	state_vars["uav"+str(i)] = [0,0,0,0,0,0]
+	pub_dict["uav"+str(i)] = rospy.Publisher("uav"+str(i)+'/cmd_vel',Twist,queue_size=10)
+	
 '''
 robot_dict = {"emulated1":"uav1","emulated2":"uav2","emulated3":"uav3"} #initialize dict with three robot mappings
 state_vars = {"uav1":[0,0,0,0,0,0],"uav2":[0,0,0,0,0,0],"uav3":[0,0,0,0,0,0]} #initalize state dict for imu variables
