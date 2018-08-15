@@ -11,6 +11,7 @@ from SimpleXMLRPCServer import SimpleXMLRPCRequestHandler
 from openwsn_ros.msg import Controls
 from rosgraph_msgs.msg import Clock
 from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
 import struct
 import sys
 
@@ -43,30 +44,18 @@ def imu_callback(imuMsg,uav_arg):
 	#rospy.loginfo(rospy.get_caller_id() + "IMU message received: %s, %s, %s ", imuMsg.linear_acceleration.x,imuMsg.linear_acceleration.y,imuMsg.linear_acceleration.z)
 	#rospy.loginfo("uav_arg: " + uav_arg)
 	global state_vars
-	uav_id = "uav1"
+
 	uav_id = uav_arg
 	state_vars[uav_id][0] = imuMsg.linear_acceleration.x
 	state_vars[uav_id][1] = imuMsg.linear_acceleration.y
 	state_vars[uav_id][2] = imuMsg.linear_acceleration.z
-#callback for imu messages from uav2
-def imu_callback2(imuMsg):
-	#rospy.loginfo(rospy.get_caller_id() + "IMU message received: %s, %s, %s ", imuMsg.linear_acceleration.x,imuMsg.linear_acceleration.y,imuMsg.linear_acceleration.z)
 
-	global state_vars
-	uav_id = "uav2"
-	state_vars[uav_id][0] = imuMsg.linear_acceleration.x
-	state_vars[uav_id][1] = imuMsg.linear_acceleration.y
-	state_vars[uav_id][2] = imuMsg.linear_acceleration.z
-
-#callback for imu messages from uav3
-def imu_callback3(imuMsg):
-	#rospy.loginfo(rospy.get_caller_id() + "IMU message received: %s, %s, %s ", imuMsg.linear_acceleration.x,imuMsg.linear_acceleration.y,imuMsg.linear_acceleration.z)
-
-	global state_vars
-	uav_id = "uav3"
-	state_vars[uav_id][0] = imuMsg.linear_acceleration.x
-	state_vars[uav_id][1] = imuMsg.linear_acceleration.y
-	state_vars[uav_id][2] = imuMsg.linear_acceleration.z
+def ground_truth_cb(msg,uav_arg):
+	global ground_truth
+	
+	uav_id = uav_arg
+	ground_truth[uav_id] = [msg.pose.pose.position.x,msg.pose.pose.position.y,msg.pose.pose.position.z]
+	#rospy.loginfo("Ground Truth for "+uav_id+ " xyz: "+str(msg.pose.pose.position.x) +", "+str(msg.pose.pose.position.y)+", " + str(msg.pose.pose.position.z))
 
 #callback for clock messages from gazebo simulation time. Keeps track of gazebo current time
 def gazebo_time_callback(clock_msg):
@@ -82,6 +71,18 @@ def gazebo_time_callback(clock_msg):
 # Register an instance; all the methods of the instance are
 # published as XML-RPC methods (in this case, just 'div').
 class MyFuncs:
+
+    def getUAVLocation(self,mote_id_int):
+
+		mote_id = "emulated"+str(mote_id_int) 	
+		target_uav = robot_dict[mote_id]   #looks up the name of the target uav that is linked to the openwsn mote name: "emulated1" -> "uav1"
+		position = ground_truth[target_uav]
+		rospy.loginfo("sending location information to "+mote_id)	
+        	return position
+
+    def openWSNMsg(self, msg):
+		rospy.loginfo(msg)
+		return
 
     #prt2###############################################################
     #called by moteProbe.py when a uart tx from a mote is received. Its 
@@ -122,7 +123,7 @@ class MyFuncs:
 
 		#return imu state to openwsn mote that called this RPC function
 		#TODO: create another timer in openwsn that requests IMU data
-		return state_vars[target_uav][0:3] , timestamp 
+		return state_vars[target_uav][0:3] , timestamp, ground_truth[target_uav]
 
     #timeSync#####################################################################	
     #Synchronizes openWSN time and gazebo time. Called by openWSN everytime a new
@@ -200,12 +201,17 @@ print "node initialized"
 robot_dict={}
 state_vars={}
 pub_dict ={}
+ground_truth ={}
 #create robot dict
 for i in range(1,int(sys.argv[1])+1):
 	robot_dict["emulated"+str(i)]="uav"+str(i)
 	rospy.Subscriber("uav"+str(i)+"/raw_imu", Imu, imu_callback,"uav"+str(i))
+	rospy.Subscriber("uav"+str(i)+"/ground_truth/state", Odometry, ground_truth_cb,"uav"+str(i))
 	state_vars["uav"+str(i)] = [0,0,0,0,0,0]
 	pub_dict["uav"+str(i)] = rospy.Publisher("uav"+str(i)+'/cmd_vel',Twist,queue_size=10)
+	
+
+
 	
 '''
 robot_dict = {"emulated1":"uav1","emulated2":"uav2","emulated3":"uav3"} #initialize dict with three robot mappings
