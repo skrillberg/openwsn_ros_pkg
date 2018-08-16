@@ -120,10 +120,11 @@ class MyFuncs:
 			
 		pub.publish(inputMsg)
 		rospy.loginfo("quad control input from "+mote_id+" published to "+target_uav+": "+str(x)+str(y)+str(inputMsg.linear.z))
-
+		neighbors = ground_truth
+		#neighbors.pop(target_uav)   #remove current mote from neighbor list
 		#return imu state to openwsn mote that called this RPC function
 		#TODO: create another timer in openwsn that requests IMU data
-		return state_vars[target_uav][0:3] , timestamp, ground_truth[target_uav]
+		return state_vars[target_uav][0:3] , timestamp, ground_truth[target_uav], neighbors
 
     #timeSync#####################################################################	
     #Synchronizes openWSN time and gazebo time. Called by openWSN everytime a new
