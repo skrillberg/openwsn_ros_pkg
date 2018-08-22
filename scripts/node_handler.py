@@ -14,6 +14,7 @@ from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 import struct
 import sys
+import numpy 
 
 #global variables ################################################
 
@@ -105,7 +106,7 @@ class MyFuncs:
 		rospy.loginfo(mote_id)
 		
 		target_uav = robot_dict[mote_id]   #looks up the name of the target uav that is linked to the openwsn mote name: "emulated1" -> "uav1"
-		rospy.loginfo("RPC control input received from " + mote_id + "routing to " +target_uav)
+		#rospy.loginfo("RPC control input received from " + mote_id + "routing to " +target_uav)
 
 		#server publishes controls that are received from the emulated mote
 
@@ -114,12 +115,12 @@ class MyFuncs:
 		inputMsg = Twist() #create twist message for quadcopter controls
 		
 		#put linear accelerations into twist message
-		inputMsg.linear.x = x
-		inputMsg.linear.y = y
-		inputMsg.linear.z = z	
+		inputMsg.linear.x = numpy.clip(x,-150,150)
+		inputMsg.linear.y = numpy.clip(y,-150,150)
+		inputMsg.linear.z = numpy.clip(z,-150,150)	
 			
 		pub.publish(inputMsg)
-		rospy.loginfo("quad control input from "+mote_id+" published to "+target_uav+": "+str(x)+str(y)+str(inputMsg.linear.z))
+		rospy.loginfo("quad control input from "+mote_id+" published to "+target_uav+": "+str(inputMsg.linear.x)+str(inputMsg.linear.y)+str(inputMsg.linear.z))
 		neighbors = ground_truth
 		#neighbors.pop(target_uav)   #remove current mote from neighbor list
 		#return imu state to openwsn mote that called this RPC function
