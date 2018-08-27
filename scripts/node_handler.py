@@ -78,8 +78,9 @@ class MyFuncs:
 		mote_id = "emulated"+str(mote_id_int) 	
 		target_uav = robot_dict[mote_id]   #looks up the name of the target uav that is linked to the openwsn mote name: "emulated1" -> "uav1"
 		position = ground_truth[target_uav]
-		rospy.loginfo("sending location information to "+mote_id)	
-        	return position
+		rospy.loginfo("sending location information to "+mote_id)
+		neighbors = ground_truth	
+        	return position,neighbors
 
     def openWSNMsg(self, msg):
 		rospy.loginfo(msg)
@@ -115,9 +116,9 @@ class MyFuncs:
 		inputMsg = Twist() #create twist message for quadcopter controls
 		
 		#put linear accelerations into twist message
-		inputMsg.linear.x = numpy.clip(x,-150,150)
-		inputMsg.linear.y = numpy.clip(y,-150,150)
-		inputMsg.linear.z = numpy.clip(z,-150,150)	
+		inputMsg.linear.x = numpy.clip(x,-20,20)
+		inputMsg.linear.y = numpy.clip(y,-20,20)
+		inputMsg.linear.z = numpy.clip(z,-20,20)	
 			
 		pub.publish(inputMsg)
 		rospy.loginfo("quad control input from "+mote_id+" published to "+target_uav+": "+str(inputMsg.linear.x)+str(inputMsg.linear.y)+str(inputMsg.linear.z))
